@@ -2,7 +2,7 @@ advent_of_code::solution!(2);
 use itertools::Itertools;
 
 fn is_safe(report: &Vec<i32>) -> bool {
-    let mut diffs: Vec<i32> = report.iter().tuple_windows().map(|(a, b)| a - b).collect();
+    let diffs: Vec<i32> = report.iter().tuple_windows().map(|(a, b)| a - b).collect();
     let lessthan = diffs.iter().all(|diff| diff.abs() <= 3);
     let signs = diffs.iter().map(|&x| x.signum()).all_equal();
     lessthan && signs
@@ -11,7 +11,7 @@ fn is_safe(report: &Vec<i32>) -> bool {
 pub fn part_one(input: &str) -> Option<u32> {
     let reports = input.lines().map(|line| line.split_whitespace().map(|x| x.parse::<i32>().unwrap()).collect::<Vec<i32>>());
     let safe = reports.filter(is_safe);
-    Some(safe.collect::<Vec<Vec<i32>>>().len() as u32)
+    Some(safe.count() as u32)
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
@@ -19,7 +19,7 @@ pub fn part_two(input: &str) -> Option<u32> {
     let safe = reports.filter(|report| {
         report.into_iter().combinations(report.len() - 1).any(|trial: Vec<&i32>| is_safe(&trial.into_iter().map(|&x| x).collect::<Vec<i32>>()))
     });
-    Some(safe.collect::<Vec<Vec<i32>>>().len() as u32)
+    Some(safe.count() as u32)
 }
 
 #[cfg(test)]
