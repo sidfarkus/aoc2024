@@ -1,5 +1,90 @@
 pub mod template;
 
+#[derive(Clone)]
+pub struct Point {
+  pub x: i32,
+  pub y: i32
+}
+
+pub struct Grid {
+  pub width: i32,
+  pub height: i32,
+  data: Vec<Vec<String>>
+}
+
+#[derive(Clone)]
+pub struct RelativeLocation {
+  pub offsets: Vec<Point>,
+  pub name: Option<&'static str>
+}
+
+pub trait Adjacency {
+  fn relative_locations(&self) -> impl Iterator<Item = RelativeLocation>;
+}
+
+fn points_for_location(origin: &Point, location: &RelativeLocation) -> Vec<Point> {
+  location.offsets.iter().map(|point| Point {x: origin.x + point.x, y: origin.y + point.y}).collect()
+}
+
+
+pub struct Neighbor {
+  pub location: RelativeLocation,
+  pub values: Vec<String>
+}
+
+impl Grid {
+  pub fn make(width: i32, height: i32, initial: Option<String>) -> Grid {
+    Grid {
+      width,
+      height,
+      data: (0..height).map(|_| {
+        (0..width).map(|_| (&initial).clone().unwrap_or(String::from(""))).collect()
+      }).collect::<Vec<Vec<String>>>()
+    }
+  }
+
+  pub fn from_input(input: &str) -> Grid {
+    let data: Vec<Vec<String>> = input.lines().map(|line| line.split("").map(String::from).collect::<Vec<_>>()).collect();
+    Grid {
+      width: data[0].len() as i32,
+      height: data.len() as i32,
+      data
+    }
+  }
+
+  pub fn points(&self) -> Vec<(Point, String)> {
+    let mut ps = Vec::with_capacity(self.data.len() * self.data[0].len());
+    for (y, row) in self.data.iter().enumerate() {
+      for (x, val) in row.iter().enumerate() {
+        ps.push((Point {x: x as i32, y: y as i32}, val.clone()));
+      }
+    }
+    ps
+  }
+
+  pub fn neighbors(&self, coord: Point, adj: impl Adjacency) -> Vec<Neighbor> {
+    if coord.x < 0 || coord.x >= self.width || coord.y < 0 || coord.y >= self.height {
+      panic!("x or y is out of bounds!");
+    }
+    adj.relative_locations().map(|location| {
+      Neighbor {
+        location: location.clone(),
+        values: points_for_location(&coord, &(location.clone()))
+                  .into_iter()
+                  .filter_map(|point| {
+                    if point.x < 0 || point.y < 0 || point.x >= self.width || point.y >= self.height {
+                      None
+                    } else {
+                      Some((&self.data[point.y as usize][point.x as usize]).clone())
+                    }
+                  })
+                  .collect()
+      }
+    }).collect()
+  }
+}
+
+
 #[derive(Debug)]
 pub enum SplitResult {
   Result(Vec<SplitResult>),
