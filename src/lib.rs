@@ -1,11 +1,20 @@
 pub mod template;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct Point {
   pub x: i32,
   pub y: i32
 }
 
+use Point as Vector;
+
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+pub struct Ray {
+  pub origin: Point,
+  pub dir: Vector
+}
+
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct Grid {
   pub width: i32,
   pub height: i32,
@@ -26,7 +35,6 @@ fn points_for_location(origin: &Point, location: &RelativeLocation) -> Vec<Point
   location.offsets.iter().map(|point| Point {x: origin.x + point.x, y: origin.y + point.y}).collect()
 }
 
-
 pub struct Neighbor {
   pub location: RelativeLocation,
   pub values: Vec<String>
@@ -44,12 +52,30 @@ impl Grid {
   }
 
   pub fn from_input(input: &str) -> Grid {
-    let data: Vec<Vec<String>> = input.lines().map(|line| line.split("").map(String::from).collect::<Vec<_>>()).collect();
+    let data: Vec<Vec<String>> = input.lines().map(|line| {
+      let mut row = line.split("").skip(1).map(String::from).collect::<Vec<_>>();
+      row.pop();
+      row
+    }).collect();
     Grid {
       width: data[0].len() as i32,
       height: data.len() as i32,
       data
     }
+  }
+
+  pub fn set(&mut self, p: &Point, val: &String)-> &Grid {
+    self.data[p.y as usize][p.x as usize] = val.clone();
+    self
+  }
+
+  pub fn at(&self, p: &Point) -> &String {
+    &self.data[p.y as usize][p.x as usize]
+  }
+
+  pub fn at_checked(&self, p: &Point) -> Option<&String> {
+    if p.y < 0 || p.y >= self.height || p.x < 0 || p.x >= self.width { return None }
+    Some(&self.data[p.y as usize][p.x as usize])
   }
 
   pub fn points(&self) -> Vec<(Point, String)> {
@@ -81,6 +107,22 @@ impl Grid {
                   .collect()
       }
     }).collect()
+  }
+
+  pub fn raycast(&self, origin: &Point, dir: &Vector, mut pred: impl FnMut(&Point, &String) -> bool) -> Option<Point> {
+    let mut step = Point { x: origin.x, y: origin.y };
+    loop {
+      let next_step = Point { x: step.x + dir.x, y: step.y + dir.y };
+      if next_step.x >= self.width || next_step.x < 0 || next_step.y < 0 || next_step.y >= self.height { return None }
+      if pred(&next_step, self.at(&next_step)) { return Some(step) }
+      step = next_step;
+    }
+  }
+
+  pub fn print(&self) {
+    for row in &self.data {
+      println!("{}", row.join(""))
+    }
   }
 }
 
