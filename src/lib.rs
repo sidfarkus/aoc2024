@@ -127,7 +127,7 @@ impl Grid {
 }
 
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum SplitResult {
   Result(Vec<SplitResult>),
   Value(String)
