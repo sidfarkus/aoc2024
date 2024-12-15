@@ -1,9 +1,27 @@
 pub mod template;
+use std::ops;
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct Point {
   pub x: i32,
   pub y: i32
+}
+
+impl ops::Sub for Point {
+  type Output = Self;
+
+  fn sub(self, rhs: Point) -> Self::Output  {
+    Point { x: self.x - rhs.x, y: self.y - rhs.y }
+  }
+}
+
+impl ops::Mul<i32> for Point {
+  type Output = Self;
+
+  // Required method
+  fn mul(self, rhs: i32) -> Self::Output {
+    Point { x: self.x * rhs, y: self.y * rhs}
+  }
 }
 
 use Point as Vector;
