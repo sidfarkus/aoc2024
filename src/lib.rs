@@ -6,6 +6,13 @@ pub struct Point {
   pub x: i32,
   pub y: i32
 }
+impl ops::Add for Point {
+  type Output = Self;
+
+  fn add(self, rhs: Point) -> Self::Output  {
+    Point { x: self.x + rhs.x, y: self.y + rhs.y }
+  }
+}
 
 impl ops::Sub for Point {
   type Output = Self;
@@ -39,7 +46,7 @@ pub struct Grid {
   data: Vec<Vec<String>>
 }
 
-#[derive(Clone)]
+#[derive(Clone,Debug)]
 pub struct RelativeLocation {
   pub offsets: Vec<Point>,
   pub name: Option<&'static str>
@@ -49,13 +56,35 @@ pub trait Adjacency {
   fn relative_locations(&self) -> impl Iterator<Item = RelativeLocation>;
 }
 
-fn points_for_location(origin: &Point, location: &RelativeLocation) -> Vec<Point> {
-  location.offsets.iter().map(|point| Point {x: origin.x + point.x, y: origin.y + point.y}).collect()
+pub struct FourWayAdjacency;
+impl Adjacency for FourWayAdjacency {
+  fn relative_locations(&self) -> impl Iterator<Item = RelativeLocation> {
+    vec![
+      RelativeLocation { name: Some("up"), offsets: vec![
+        Point {x: 0, y: -1},
+      ]},
+      RelativeLocation { name: Some("right"), offsets: vec![
+        Point {x: 1, y: 0},
+      ]},
+      RelativeLocation { name: Some("down"), offsets: vec![
+        Point {x: 0, y: 1},
+      ]},
+      RelativeLocation { name: Some("left"), offsets: vec![
+        Point {x: -1, y: 0},
+      ]},
+    ].into_iter()
+  }
 }
 
+fn points_for_location(origin: &Point, location: &RelativeLocation) -> Vec<Point> {
+  location.offsets.iter().map(|point| point.clone() + origin.clone()).collect()
+}
+
+#[derive(Debug)]
 pub struct Neighbor {
   pub location: RelativeLocation,
-  pub values: Vec<String>
+  pub values: Vec<String>,
+  pub points: Vec<Point>
 }
 
 impl Grid {
@@ -113,6 +142,7 @@ impl Grid {
     adj.relative_locations().map(|location| {
       Neighbor {
         location: location.clone(),
+        points: points_for_location(&coord, &(location.clone())),
         values: points_for_location(&coord, &(location.clone()))
                   .into_iter()
                   .filter_map(|point| {
