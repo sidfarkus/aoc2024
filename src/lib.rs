@@ -144,6 +144,20 @@ impl Grid {
   }
 }
 
+pub trait HasExtents {
+  fn size(&self) -> usize;
+}
+impl HasExtents for std::ops::Range<usize> {
+  fn size(&self) -> usize {
+    self.end - self.start
+  }
+}
+impl HasExtents for std::ops::RangeInclusive<usize> {
+  fn size(&self) -> usize {
+    self.end() - self.start() + 1
+  }
+}
+
 
 #[derive(Clone, Debug)]
 pub enum SplitResult {
