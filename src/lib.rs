@@ -1,5 +1,6 @@
 pub mod template;
 use std::ops;
+use std::collections::HashSet;
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct Point {
@@ -87,6 +88,12 @@ pub struct Neighbor {
   pub points: Vec<Point>
 }
 
+impl Neighbor {
+  pub fn point(&self) -> &Point { &self.points[0] }
+  pub fn value(&self) -> &String { &self.values[0] }
+  pub fn has_value(&self) -> bool { !self.values.is_empty() }
+}
+
 impl Grid {
   pub fn make(width: i32, height: i32, initial: Option<String>) -> Grid {
     Grid {
@@ -171,6 +178,23 @@ impl Grid {
     for row in &self.data {
       println!("{}", row.join(""))
     }
+  }
+
+  pub fn flood(&self, start: &Point) -> HashSet<Point> {
+    let mut points: HashSet<Point> = HashSet::new();
+    let mut stack: Vec<Point> = Vec::with_capacity(100);
+
+    stack.push(start.clone());
+    let initial_value = self.at(start);
+    loop {
+      let Some(next) = stack.pop() else { break };
+      points.insert(next.clone());
+      self.neighbors(next, FourWayAdjacency)
+        .into_iter()
+        .filter(|n| n.has_value() && n.value() == initial_value && !points.contains(&n.point()))
+        .for_each(|n| stack.push(n.points[0].clone()));
+    }
+    points
   }
 }
 
